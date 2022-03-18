@@ -23,7 +23,7 @@ const ouidPattern = /@user:(?<NAME>.*?)!o.host\[(?<HOSTSERVER>.*?)\]/gmi // a re
 namespace auth {
     /**
      * Validate credentials within the auth handler
-     * @class auth.Validator
+     * @class Validator
      */
     export class Validator {
         type: string
@@ -41,13 +41,45 @@ namespace auth {
          * @returns {boolean} Approval or denial of request
          */
         public validateUserRequest = (credentials: string, ouid: string) => {
+            if (this.type !== "user") { return ("Incorrect validator type") }
+        }
 
+        /**
+         * @func Validator.validateObjectRequest
+         * @description Validate a request to fetch an object's information
+         * 
+         * @param {string} owner - The ouid of the owner of the object
+         * @param {string} user - The ouid of the user requesting the object
+         * @param {string} id - The objectId of the requested object 
+         * @returns {Promise} Promise object returning either true, or rejecting with false
+         */
+        public validateObjectRequest = (owner: string, user: string, id: string) => {
+            return new Promise((resolve, reject) => {
+                if (this.type !== "object") { return reject("Incorrect validator type") }
+                localdb.read(`auth/bucket/${owner}/${id}.json`, (data, err) => { 
+                    if (err) {
+                        reject(err) // reject the promise and return an error
+                    } else {
+                        if (forceValidation) {
+                            // validate request
+                            if (user !== owner && data["$oxvs"].shareList.includes(user)) {
+                                resolve(true) // return data
+                            } else {
+                                reject(false) // don't return data
+                            }
+                        } else {
+                            // oh you're requesting this object? okay! (allow anybody through)
+                            resolve(true) // return data
+                        }
+                    }
+                })
+            })
         }
     }
 
     /**
      * Control the authentication database
-     * @class auth.AuthDatabase
+     * @class AuthDatabase
      */
     export class AuthDatabase {
         dataName: string

@@ -9,7 +9,7 @@
  * @global
  * @name HOST_SERVER
  * @description The host server url that this service is deployed to
- * @example "https://server.exvs.net"
+ * @example "https://server.oxvs.net"
  */
 const HOST_SERVER = process.env.HOST_SERVER
 
@@ -21,6 +21,15 @@ const HOST_SERVER = process.env.HOST_SERVER
  * @default true
  */
 const doAllowNewUser = true
+
+/**
+ * @global
+ * @name forceValidation
+ * @description Force credential validation for all functions that interact with the database
+ * @example true | false
+ * @default true
+ */
+const forceValidation = true
 
 /**
  * @typedef {object} user

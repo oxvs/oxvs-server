@@ -14,12 +14,14 @@
 namespace bucket {
     /**
      * Upload data to server
-     * @class bucket.ObjectHandler
+     * @class ObjectHandler
      */
     export class ObjectHandler {
         sender: string
 
         constructor(props) {
+            // props.sender is basically just who the object belongs to
+            // a little weird to be named this.sender later on though, so remember that
             this.sender = props.sender
         }
 
@@ -28,14 +30,17 @@ namespace bucket {
          * @description Upload JSON data to storage for quick access later
          * 
          * @param {object} data - The data that will be saved as a new bucket/object
+         * @param {array} shareList - A list of user IDs that have access to the resource
          * @returns {Promise} Promise object returning either the ID or an error message
          */
-        public upload(data: any) {
+        public upload(data: any, shareList: string[]) {
             // generate id
             const objectId = (performance.now().toString(36)+Math.random().toString(36)).replace(/\./g,"")
             
             // add sender value to data
-            data.__sender = this.sender
+            data["$oxvs"] = {}
+            data["$oxvs"].sender = this.sender
+            data["$oxvs"].shareList = shareList
 
             // write data
             return new Promise((resolve, reject) => {
@@ -54,15 +59,34 @@ namespace bucket {
          * @description Get JSON data previously uploaded to storage by using the ID
          * 
          * @param {string} id - The objectId of the requested object 
+         * @param {string} requestFrom - The ouid of the user requesting the object
          * @returns {Promise} Promise object returning the data or an error message
          */
-        public get(id: string) {
+        public get(id: string, requestFrom: string) {
+            // create object validator
+            const validator = new auth.Validator({
+                type: 'object'
+            })
+
+            // create promise
             return new Promise((resolve, reject) => {
                 localdb.read(`auth/bucket/${this.sender}/${id}.json`, (data, err) => { 
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
-                        resolve(data) // return data
+                        if (forceValidation) {
+                            // validate request
+                            validator.validateObjectRequest(this.sender, requestFrom, id)
+                                .then(() => {
+                                    resolve(data) // return data
+                                })
+                                .catch((err) => {
+                                    reject(err) // validation failed
+                                })
+                        } else {
+                            // oh you're requesting this object? okay! (allow anybody through)
+                            resolve(data) // return data
+                        }
                     }
                 })
             })
