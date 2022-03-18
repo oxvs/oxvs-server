@@ -35,8 +35,8 @@ namespace bucket {
          */
         public upload(data: any, shareList: string[]) {
             // generate id
-            const objectId = (performance.now().toString(36)+Math.random().toString(36)).replace(/\./g,"")
-            
+            const objectId = (performance.now().toString(36) + Math.random().toString(36)).replace(/\./g, "")
+
             // add sender value to data
             data["$oxvs"] = {}
             data["$oxvs"].sender = this.sender
@@ -44,7 +44,7 @@ namespace bucket {
 
             // write data
             return new Promise((resolve, reject) => {
-                localdb.write(`auth/bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data, err) => { 
+                localdb.write(`auth/bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data, err) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -70,7 +70,7 @@ namespace bucket {
 
             // create promise
             return new Promise((resolve, reject) => {
-                localdb.read(`auth/bucket/${this.sender}/${id}.json`, (data, err) => { 
+                localdb.read(`auth/bucket/${this.sender}/${id}.json`, (data, err) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -97,11 +97,43 @@ namespace bucket {
          * @description Delete a stored object by using the ID
          * 
          * @param {string} id - The objectId of the request object
+         * @param {string} requestFrom - The ouid of the user requesting the object
          * @returns {Promise} Promise object returning true of an error message
          */
-        public delete(id: string) {
+        public delete(id: string, requestFrom: string) {
+            // delete file
             return new Promise((resolve, reject) => {
+                // create object validator
+                const validator = new auth.Validator({
+                    type: 'object'
+                })
 
+                // create promise
+                return new Promise((resolve, reject) => {
+                    function _delete() {
+                        localdb.unlink(`auth/bucket/${this.sender}/${id}.json`, (err) => {
+                            if (err !== true) {
+                                reject(err)
+                            } else {
+                                resolve(true) // resolve
+                            }
+                        })
+                    }
+
+                    if (forceValidation) {
+                        // validate request
+                        validator.validateObjectRequest(this.sender, requestFrom, id)
+                            .then(() => {
+                                _delete() // delete file
+                            })
+                            .catch((err) => {
+                                reject(err) // validation failed
+                            })
+                    } else {
+                        // oh you're requesting this object? okay! (allow anybody through)
+                        _delete() // delete file
+                    }
+                })
             })
         }
     }
