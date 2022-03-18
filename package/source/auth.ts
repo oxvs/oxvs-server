@@ -27,16 +27,14 @@ namespace authHandle {
     export class Validator {
         type: string
 
-        /**
-         * @constructor Construct a validator
-         * @param props 
-         */
         constructor(props) {
             this.type = props.type
         }
 
         /**
-         * Validate a user request based on sent credentials
+         * @func validateUserRequest
+         * @description Validate a user request based on sent credentials
+         * 
          * @param {string} credentials User access token
          * @param {string} ouid User's server id
          * @returns {boolean} Approval or denial of request
@@ -53,16 +51,14 @@ namespace authHandle {
     export class AuthDatabase {
         dataName: string
 
-        /**
-         * @constructor Construct an AuthDatabase object
-         * @param {string} dataName - The name of the database in use
-         */
         constructor(props) {
             this.dataName = props.dataName
         }
 
         /**
-         * Get a user's information from the server based on their id
+         * @func getUser
+         * @description Get a user's information from the server based on their id
+         * 
          * @param {string} ouid user's server id
          * @returns {Promise} Promise object returning either the user's data, or an error message
          */
@@ -80,6 +76,8 @@ namespace authHandle {
         }
 
         /**
+         * @func newUser
+         * @description Create a new user file
          * 
          * @param {string} username The user's requested username
          * @returns {Promise} Promise object returning either true or an error message

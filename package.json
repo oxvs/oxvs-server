@@ -4,6 +4,7 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.21",
+    "clean-jsdoc-theme": "^3.3.4",
     "dotenv": "^16.0.0",
     "jsdoc": "^3.6.10"
   },
@@ -12,7 +13,7 @@
   "main": "package/dist.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tsc; npx jsdoc package/dist.js"
+    "build": "npx tsc; npx jsdoc --configure jsdoc.json --verbose"
   },
   "repository": {
     "type": "git",
