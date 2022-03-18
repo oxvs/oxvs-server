@@ -1,5 +1,6 @@
 /**
  * @file Manage the authentication section of the OXVS-SERVER
+ * @name auth.ts
  * @author 0a_oq <hkau@oxvs.net>
  * @version 0.0.1
  */
@@ -15,11 +16,14 @@ const localdb = null // placeholder
 
 const ouidPattern = /@user:(?<NAME>.*?)!o.host\[(?<HOSTSERVER>.*?)\]/gmi // a regex version of the stuff explained above
 
-// namespace
-namespace authHandle {
+/**
+ * @namespace auth
+ * @description Handle tasks related to authentication
+ */
+namespace auth {
     /**
      * Validate credentials within the auth handler
-     * @class Validator
+     * @class auth.Validator
      */
     export class Validator {
         type: string
@@ -43,7 +47,7 @@ namespace authHandle {
 
     /**
      * Control the authentication database
-     * @class AuthDatabase
+     * @class auth.AuthDatabase
      */
     export class AuthDatabase {
         dataName: string

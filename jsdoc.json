@@ -4,7 +4,9 @@
         "includePattern": ".js$"
     },
 
-    "plugins": ["plugins/markdown"],
+    "plugins": [
+        "plugins/markdown"
+    ],
 
     "opts": {
         "encoding": "utf8",

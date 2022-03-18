@@ -70,6 +70,8 @@ namespace LocalDB {
     }
 
     /**
+     * @func LocalDB.write
+     * @description Write data to a local file
      * 
      * @param {string} path - The path to the file relative to the /data/ folder
      * @param {string} data - The data to be written
@@ -100,6 +102,25 @@ namespace LocalDB {
                 return err
             } else {
                 if (callback) { return callback(err) }
+            }
+        })
+    }
+
+    /**
+     * @func LocalDB.unlink
+     * @description Delete a file from the data folder
+     * 
+     * @param {string} path - The path to the file relative to the /data/ folder
+     * @param {Function} callback - A function that will run after all tasks have completed (or errored)
+     */
+    export const unlink = function (path: string, callback: Function) {
+        // delete files from the db
+        fs.unlink(`${dataPath}/${path}`, (err) => {
+            if (err) {
+                if (callback) { return callback(err) }
+                return err
+            } else {
+                if (callback) { return callback(true) } // file deleted
             }
         })
     }

@@ -1,15 +1,20 @@
 /**
  * @file Manage the bucket and storage section of the OXVS-SERVER
+ * @name bucket.ts
  * @author 0a_oq <hkau@oxvs.net>
  * @version 0.0.1
  */
 
 /// <reference path="auth.ts" />
 
+/**
+ * @namespace bucket
+ * @description Handle tasks related to object storage
+ */
 namespace bucket {
     /**
      * Upload data to server
-     * @class ObjectHandler
+     * @class bucket.ObjectHandler
      */
     export class ObjectHandler {
         sender: string
@@ -67,7 +72,7 @@ namespace bucket {
          * @func ObjectHandler.delete
          * @description Delete a stored object by using the ID
          * 
-         * @param {string} id - The objectId of the request objectc
+         * @param {string} id - The objectId of the request object
          * @returns {Promise} Promise object returning true of an error message
          */
         public delete(id: string) {
