@@ -62,5 +62,18 @@ namespace bucket {
                 })
             })
         }
+
+        /**
+         * @func ObjectHandler.delete
+         * @description Delete a stored object by using the ID
+         * 
+         * @param {string} id - The objectId of the request objectc
+         * @returns {Promise} Promise object returning true of an error message
+         */
+        public delete(id: string) {
+            return new Promise((resolve, reject) => {
+
+            })
+        }
     }
 }

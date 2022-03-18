@@ -1,6 +1,6 @@
 {
     "source": {
-        "include": ["package/source/"],
+        "include": ["package/dist.js"],
         "includePattern": ".js$"
     },
 
@@ -13,7 +13,27 @@
         "verbose": true,
         "template": "./node_modules/clean-jsdoc-theme",
         "theme_opts": {
-            "theme": "dark"
+            "theme": "dark",
+            "title": "oxvs-server",
+            "footer": "<a href='https://github.com/0aoq/oxvs-server'>OXVS-SERVER</a>",
+            "menu": [
+                {
+                    "title": "oxvs",
+                    "id": "oxvshome",
+                    "link": "https://oxvs.net"
+                },
+                {
+                    "title": "Zerobase",
+                    "id": "zerobasehome",
+                    "link": "https://zbase.dev"
+                }
+            ],
+            "resizeable": {
+                "navbar": {
+                    "min": "300",
+                    "max": "600"
+                }
+            }
         }
     }
 }
