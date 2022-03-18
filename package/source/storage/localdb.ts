@@ -1,4 +1,11 @@
 /**
+ * @file Handle local database requests
+ * @name localdb.ts
+ * @author oxvs <admin@oxvs.net>
+ * @version 0.1.2
+ */
+
+/**
  * @namespace LocalDB
  * @description Local database handler
  */

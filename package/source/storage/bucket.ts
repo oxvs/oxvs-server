@@ -1,7 +1,9 @@
+/// <reference path="../init.ts" />
+
 /**
  * @file Manage the bucket and storage section of the OXVS-SERVER
  * @name bucket.ts
- * @author 0a_oq <hkau@oxvs.net>
+ * @author oxvs <admin@oxvs.net>
  * @version 0.0.1
  */
 

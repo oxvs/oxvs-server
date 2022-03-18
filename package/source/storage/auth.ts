@@ -1,7 +1,9 @@
+/// <reference path="../init.ts" />
+
 /**
  * @file Manage the authentication section of the OXVS-SERVER
  * @name auth.ts
- * @author 0a_oq <hkau@oxvs.net>
+ * @author oxvs <admin@oxvs.net>
  * @version 0.0.1
  */
 

@@ -1,5 +1,4 @@
-/// <reference path="init.ts" />
-/// <reference path="localdb.ts" />
+/// <reference path="storage/localdb.ts" />
 /// <reference path="storage/auth.ts" />
 /// <reference path="storage/bucket.ts" />
 
