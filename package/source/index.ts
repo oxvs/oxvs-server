@@ -50,6 +50,14 @@ console.log("Run with no issues.")
     authdb.newUser("test", "testpassword")
         ?.catch((err) => console.error(err));
 
+    authdb.getUser("@user:test!o.host[server.oxvs.net]")
+        .then(() => {
+            // login test
+            authdb.login("@user:test!o.host[server.oxvs.net]", "testpassword")
+                .then((credentials) => console.log(credentials))
+                .catch((err) => console.error(err))
+        }).catch((err) => console.error(err))
+
     // bucket
     const objdb = new bucket.ObjectHandler({
         sender: "@user:test!o.host[server.oxvs.net]"

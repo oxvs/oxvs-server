@@ -165,7 +165,13 @@ namespace auth {
                             password: evext.encodeString(password),
                             uuid: _crypto.randomUUID(),
                             activeSessions: [credential] // store credentials
-                        }), () => { return })
+                        }), (err?: string) => { 
+                            if (err) {
+                                reject(err) // error occured
+                            } else {
+                                resolve(true) // processed successfully
+                            }
+                        })
 
                         resolve(true)
                     } else {
@@ -190,12 +196,12 @@ namespace auth {
                     } else {
                         data = JSON.parse(data)
                         data.currentCredential = this.generateSessionCredential()
+                        data.activeSessions.push(data.currentCredential)
                         
                         LocalDB.write(`users/${ouid}.json`, JSON.stringify(data), (data1: any, err1: any) => {
                             if (err1) {
                                 reject(err1) // reject with other error message
                             } else {
-                                data.activeSessions.push(data.currentCredential)
                                 resolve(data.currentCredential) // session has been renewed
                             }
                         })

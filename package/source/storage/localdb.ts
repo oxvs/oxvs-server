@@ -112,7 +112,7 @@ namespace LocalDB {
                 if (callback) { return callback(err) }
                 return err
             } else {
-                if (callback) { return callback(err) }
+                if (callback) { return callback() }
             }
         })
 
