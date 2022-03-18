@@ -32,7 +32,7 @@ namespace authHandle {
         }
 
         /**
-         * @func validateUserRequest
+         * @func Validator.validateUserRequest
          * @description Validate a user request based on sent credentials
          * 
          * @param {string} credentials User access token
@@ -56,7 +56,7 @@ namespace authHandle {
         }
 
         /**
-         * @func getUser
+         * @func AuthDatabase.getUser
          * @description Get a user's information from the server based on their id
          * 
          * @param {string} ouid user's server id
@@ -76,7 +76,7 @@ namespace authHandle {
         }
 
         /**
-         * @func newUser
+         * @func AuthDatabase.newUser
          * @description Create a new user file
          * 
          * @param {string} username The user's requested username
