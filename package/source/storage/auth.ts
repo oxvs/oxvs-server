@@ -2,11 +2,13 @@
 /// <reference path="localdb.ts" />
 /// <reference path="../crypto/evext.ts" />
 
+const _crypto = require("crypto")
+
 /**
  * @file Manage the authentication section of the OXVS-SERVER
  * @name auth.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.2
+ * @version 0.0.3
  */
 
 /*
@@ -35,7 +37,8 @@ namespace auth {
         username: string,
         ouid: string,
         currentCredential: string,
-        password: string
+        password: string,
+        uuid: string
     }
 
     /**
@@ -104,6 +107,7 @@ namespace auth {
 
         constructor(props: any) {
             this.dataName = props.dataName
+            console.log("Created an AuthDatabase object with no issues.")
         }
 
         /**
@@ -115,7 +119,7 @@ namespace auth {
          */
         public getUser = (ouid: string) => {
             return new Promise((resolve, reject) => {
-                LocalDB.read(`auth/users/${ouid}.json`, (data: string, err: string) => {
+                LocalDB.read(`users/${ouid}.json`, (data: string, err: string) => {
                     if (err) {
                         reject(err) /// the user does not exist
                     } else {
@@ -148,17 +152,19 @@ namespace auth {
             if (!doAllowNewUser) { return }
             const ouid = `@user:${username}!o.host[${HOST_SERVER}]` // create an id for the user
             return new Promise((resolve, reject) => {
-                LocalDB.read(`auth/users/${ouid}.json`, (data: any, err: any) => {
+                LocalDB.read(`users/${ouid}.json`, (data: any, err: any) => {
                     if (err) {
                         // assume this means the user doesn't exist yet
                         const credential = this.generateSessionCredential()
 
-                        LocalDB.write("auth/users.json", JSON.stringify({
+                        LocalDB.write(`users/${ouid}.json`, JSON.stringify({
                             host: HOST_SERVER,
                             username: username,
                             ouid: ouid,
                             currentCredential: credential,
-                            password: evext.encodeString(password)
+                            password: evext.encodeString(password),
+                            uuid: _crypto.randomUUID(),
+                            activeSessions: [credential] // store credentials
                         }), () => { return })
 
                         resolve(true)
@@ -178,17 +184,18 @@ namespace auth {
          */
         public renewUserSession = (ouid: string) => {
             return new Promise((resolve, reject) => {
-                LocalDB.read(`auth/users/${ouid}.json`, (data: any, err: any) => {
+                LocalDB.read(`users/${ouid}.json`, (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject with the error message
                     } else {
                         data = JSON.parse(data)
                         data.currentCredential = this.generateSessionCredential()
                         
-                        LocalDB.write(`auth/users/${ouid}.json`, JSON.stringify(data), (data1: any, err1: any) => {
+                        LocalDB.write(`users/${ouid}.json`, JSON.stringify(data), (data1: any, err1: any) => {
                             if (err1) {
                                 reject(err1) // reject with other error message
                             } else {
+                                data.activeSessions.push(data.currentCredential)
                                 resolve(data.currentCredential) // session has been renewed
                             }
                         })

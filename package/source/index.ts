@@ -41,3 +41,27 @@ interface userCredential { ouid: string, tag: "o.userCredential" }
  * @typedef {object} upload
  */
 interface upload { sender: string, tag: "o.upload" }
+
+console.log("Run with no issues.")
+
+/* function test() {
+    // auth
+    const authdb = new auth.AuthDatabase({})
+    authdb.newUser("test", "testpassword")
+        ?.catch((err) => console.error(err));
+
+    // bucket
+    const objdb = new bucket.ObjectHandler({
+        sender: "@user:test!o.host[server.oxvs.net]"
+    })
+
+    objdb.upload({
+        data: "Hello, world!"
+    }, [
+        "@user:test1!o.host[server.oxvs.net]",
+        "@user:test2!o.host[server.oxvs.net]",
+        "@user:test3!o.host[server.oxvs.net]"
+    ])
+}
+
+test() */

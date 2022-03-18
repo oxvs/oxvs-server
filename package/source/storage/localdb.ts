@@ -67,7 +67,7 @@ namespace LocalDB {
      */
     export const read = function (path: string, callback: Function) {
         // return a callback containing the data of the requested document (or the error)
-        fs.readFile(`${dataPath}/${path}`, 'utf-8', function (data: string, err: string) {
+        fs.readFile(`${dataPath}/${path}`, 'utf-8', function (err: string, data: string) {
             if (err) {
                 if (callback) { return callback(data, err) }
             } else {
@@ -75,6 +75,8 @@ namespace LocalDB {
             }
         })
     }
+
+    let previousWriteDir = ""
 
     /**
      * @func LocalDB.write
@@ -93,11 +95,13 @@ namespace LocalDB {
         if (dir_split[1]) {
             for (let datapoint of dir_split) {
                 if (dir_split.indexOf(datapoint) !== dir_split.length - 1) {
+                    datapoint = previousWriteDir + datapoint
                     fs.mkdir(`${dataPath}/${datapoint}`, { recursive: true }, (err: string) => {
                         if (err) {
                             return console.error(err)
                         }
                     })
+                    previousWriteDir = datapoint + "/"
                 }
             }
         }
@@ -111,6 +115,9 @@ namespace LocalDB {
                 if (callback) { return callback(err) }
             }
         })
+
+        // reset previousWriteDir
+        previousWriteDir = ""
     }
 
     /**

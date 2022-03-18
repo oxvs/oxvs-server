@@ -5,7 +5,7 @@ require('dotenv').config()
  * @file Manage the bucket and storage section of the OXVS-SERVER
  * @name bucket.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.2
+ * @version 0.0.3
  */
 
 /// <reference path="auth.ts" />
@@ -29,6 +29,7 @@ namespace bucket {
             // props.sender is basically just who the object belongs to
             // a little weird to be named this.sender later on though, so remember that
             this.sender = props.sender
+            console.log("Created an ObjectHandler object with no issues.")
         }
 
         /**
@@ -41,7 +42,7 @@ namespace bucket {
          */
         public upload(data: any, shareList: string[]) {
             // generate id
-            const objectId = (performance.now().toString(36) + Math.random().toString(36)).replace(/\./g, "")
+            const objectId = _crypto.randomUUID()
 
             // add sender value to data
             data["$oxvs"] = {}
@@ -50,7 +51,7 @@ namespace bucket {
 
             // write data
             return new Promise((resolve, reject) => {
-                LocalDB.write(`auth/bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data: any, err: any) => {
+                LocalDB.write(`bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -76,7 +77,7 @@ namespace bucket {
 
             // create promise
             return new Promise((resolve, reject) => {
-                LocalDB.read(`auth/bucket/${this.sender}/${id}.json`, (data: any, err: any) => {
+                LocalDB.read(`bucket/${this.sender}/${id}.json`, (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -117,7 +118,7 @@ namespace bucket {
                 // create promise
                 return new Promise((resolve, reject) => {
                     function _delete(this: any) {
-                        LocalDB.unlink(`auth/bucket/${this.sender}/${id}.json`, (err: any) => {
+                        LocalDB.unlink(`bucket/${this.sender}/${id}.json`, (err: any) => {
                             if (err !== true) {
                                 reject(err)
                             } else {
