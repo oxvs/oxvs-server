@@ -1,6 +1,6 @@
 {
     "source": {
-        "include": ["package/dist.js"],
+        "include": ["package/source/"],
         "includePattern": ".js$"
     },
 
