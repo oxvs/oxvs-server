@@ -33,7 +33,18 @@
                     "min": "300",
                     "max": "600"
                 }
-            }
+            },
+            "favicon": "https://zbase.dev/favicon.png",
+            "meta": [
+                {
+                    "name": "Author",
+                    "content": "hkau"
+                },
+                {
+                    "name": "Description",
+                    "content": "Documentation for @oxvs.net/oxvs-server"
+                }
+            ]
         }
     }
 }

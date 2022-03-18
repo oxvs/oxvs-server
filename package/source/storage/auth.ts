@@ -87,9 +87,10 @@ namespace authHandle {
          * @description Create a new user file
          * 
          * @param {string} username The user's requested username
-         * @returns {Promise} Promise object returning either true or an error message
+         * @returns {Promise} Promise object returning either true, or an error message
          */
         public newUser = (username: string) => {
+            if (!doAllowNewUser) { return }
             const ouid = `@user:${username}!o.host[${HOST_SERVER}]` // create an id for the user
             return new Promise((resolve, reject) => {
                 localdb.read(`auth/users/${ouid}.json`, (data, err) => {
@@ -117,7 +118,7 @@ namespace authHandle {
          * @description Generates a new session credential and assigns it to a given user
          * 
          * @param {string} ouid User's server ID
-         * @returns {Promise} Promise object returning either true or an error message
+         * @returns {Promise} Promise object returning either true, or an error message
          */
         public renewUserSession = (ouid: string) => {
             return new Promise((resolve, reject) => {
