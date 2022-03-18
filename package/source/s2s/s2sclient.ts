@@ -1,11 +1,12 @@
 /**
- * @name s2sclient.ts
  * @file Server to Server communication
+ * @name s2sclient.ts
  * @version 0.0.2
  * @author oxvs <admin@oxvs.net>
  */
 
 /// <reference path="../init.ts" />
+require('dotenv').config()
 
 /**
  * @namespace s2s
@@ -42,7 +43,7 @@ namespace s2s {
      * }
      * @default null
      */
-    export type request = { destination: string, type: requestType, body: {}, headers: {any} }
+    export type request = { destination: string, type: requestType, body: {}, headers: {} }
 
     /**
      * @func s2s.checkHostServer
@@ -51,7 +52,7 @@ namespace s2s {
      * @param {string} origin - The origin host server that the request is coming form
      * @returns {boolean} If the origin server matches the current host server
      */
-    export function checkHostServer(origin) {
+    export function checkHostServer(origin: string) {
         return (origin === HOST_SERVER)
     }
 
@@ -87,7 +88,7 @@ namespace s2s {
     export class requestHandler {
         type: string
 
-        constructor(props) {
+        constructor(props: any) {
             this.type = props.type
         }
 
@@ -102,6 +103,25 @@ namespace s2s {
             return new Promise((resolve, reject) => {
                 fetch(props.destination, {
                     method: 'POST',
+                    body: JSON.stringify(props.body),
+                    headers: props.headers
+                }).then((response) => response.json())
+                .then((json) => resolve(json))
+                .catch((err) => reject(err))
+            })
+        }
+
+        /**
+         * @func requestHandler.GET
+         * @description Send a GET request to an outside host server
+         * 
+         * @param {request} props 
+         * @returns {Promise} Promise object returning either the response, or an error message
+         */
+        public GET = (props: request) => {
+            return new Promise((resolve, reject) => {
+                fetch(props.destination, {
+                    method: 'GET',
                     body: JSON.stringify(props.body),
                     headers: props.headers
                 }).then((response) => response.json())

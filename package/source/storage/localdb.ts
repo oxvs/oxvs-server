@@ -23,7 +23,7 @@ namespace LocalDB {
      * @param {object} options Database options and rules
      * @returns {string} Path to the data folder on the local machine
      */
-    export const createDB = function (name: string, options: { logStatus: boolean }) {
+    export const createDB = function (this: any, name: string, options: { logStatus: boolean }) {
         // config
         if (options === null) {
             // defaults
@@ -40,13 +40,13 @@ namespace LocalDB {
             lastUpdated: new Date().toLocaleString()
         }]
 
-        fs.mkdir(path.join(__dirname, 'data'), { recursive: true }, (err) => {
+        fs.mkdir(path.join(__dirname, 'data'), { recursive: true }, (err: string) => {
             if (err) {
                 return console.error(err)
             }
         })
 
-        fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err) => {
+        fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err: string) => {
             if (err) {
                 return console.error(err)
             }
@@ -67,7 +67,7 @@ namespace LocalDB {
      */
     export const read = function (path: string, callback: Function) {
         // return a callback containing the data of the requested document (or the error)
-        fs.readFile(`${dataPath}/${path}`, 'utf-8', function (data, err) {
+        fs.readFile(`${dataPath}/${path}`, 'utf-8', function (data: string, err: string) {
             if (err) {
                 if (callback) { return callback(data, err) }
             } else {
@@ -93,7 +93,7 @@ namespace LocalDB {
         if (dir_split[1]) {
             for (let datapoint of dir_split) {
                 if (dir_split.indexOf(datapoint) !== dir_split.length - 1) {
-                    fs.mkdir(`${dataPath}/${datapoint}`, { recursive: true }, (err) => {
+                    fs.mkdir(`${dataPath}/${datapoint}`, { recursive: true }, (err: string) => {
                         if (err) {
                             return console.error(err)
                         }
@@ -103,7 +103,7 @@ namespace LocalDB {
         }
 
         // now that the directories exist, write the data
-        fs.writeFile(`${dataPath}/${path}`, data, 'utf-8', (err) => {
+        fs.writeFile(`${dataPath}/${path}`, data, 'utf-8', (err: string) => {
             if (err) {
                 if (callback) { return callback(err) }
                 return err
@@ -122,7 +122,7 @@ namespace LocalDB {
      */
     export const unlink = function (path: string, callback: Function) {
         // delete files from the db
-        fs.unlink(`${dataPath}/${path}`, (err) => {
+        fs.unlink(`${dataPath}/${path}`, (err: string) => {
             if (err) {
                 if (callback) { return callback(err) }
                 return err

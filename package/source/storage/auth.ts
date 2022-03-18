@@ -1,13 +1,13 @@
 /// <reference path="../init.ts" />
+/// <reference path="localdb.ts" />
+/// <reference path="../crypto/evext.ts" />
 
 /**
  * @file Manage the authentication section of the OXVS-SERVER
  * @name auth.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.1
+ * @version 0.0.2
  */
-
-const localdb = null // placeholder
 
 /*
  * ouid:
@@ -23,6 +23,21 @@ const ouidPattern = /@user:(?<NAME>.*?)!o.host\[(?<HOSTSERVER>.*?)\]/gmi // a re
  * @description Handle tasks related to authentication
  */
 namespace auth {
+    // https://oxvs.{hostserverurl}/api/v1/auth/{function}?{data}
+    // ex: https://oxvs.oxvs.net/api/v1/auth/new (new: newUser)
+
+    /**
+     * @typedef user
+     * @description The "user" object that is stored
+     */
+    export interface user {
+        host: string,
+        username: string,
+        ouid: string,
+        currentCredential: string,
+        password: string
+    }
+
     /**
      * Validate credentials within the auth handler
      * @class Validator
@@ -30,7 +45,7 @@ namespace auth {
     export class Validator {
         type: string
 
-        constructor(props) {
+        constructor(props: any) {
             this.type = props.type
         }
 
@@ -44,6 +59,7 @@ namespace auth {
          */
         public validateUserRequest = (credentials: string, ouid: string) => {
             if (this.type !== "user") { return ("Incorrect validator type") }
+
         }
 
         /**
@@ -58,7 +74,7 @@ namespace auth {
         public validateObjectRequest = (owner: string, user: string, id: string) => {
             return new Promise((resolve, reject) => {
                 if (this.type !== "object") { return reject("Incorrect validator type") }
-                localdb.read(`auth/bucket/${owner}/${id}.json`, (data, err) => { 
+                LocalDB.read(`auth/bucket/${owner}/${id}.json`, (data: any, err: string) => { 
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -86,7 +102,7 @@ namespace auth {
     export class AuthDatabase {
         dataName: string
 
-        constructor(props) {
+        constructor(props: any) {
             this.dataName = props.dataName
         }
 
@@ -99,7 +115,7 @@ namespace auth {
          */
         public getUser = (ouid: string) => {
             return new Promise((resolve, reject) => {
-                localdb.read(`auth/users/${ouid}.json`, (data, err) => {
+                LocalDB.read(`auth/users/${ouid}.json`, (data: string, err: string) => {
                     if (err) {
                         reject(err) /// the user does not exist
                     } else {
@@ -125,22 +141,24 @@ namespace auth {
          * @description Create a new user file
          * 
          * @param {string} username The user's requested username
+         * @param {string} password The user's entered password
          * @returns {Promise} Promise object returning either true, or an error message
          */
-        public newUser = (username: string) => {
+        public newUser = (username: string, password: string) => {
             if (!doAllowNewUser) { return }
             const ouid = `@user:${username}!o.host[${HOST_SERVER}]` // create an id for the user
             return new Promise((resolve, reject) => {
-                localdb.read(`auth/users/${ouid}.json`, (data, err) => {
+                LocalDB.read(`auth/users/${ouid}.json`, (data: any, err: any) => {
                     if (err) {
                         // assume this means the user doesn't exist yet
                         const credential = this.generateSessionCredential()
 
-                        localdb.write("auth/users.json", JSON.stringify({
+                        LocalDB.write("auth/users.json", JSON.stringify({
                             host: HOST_SERVER,
                             username: username,
                             ouid: ouid,
-                            currentCredential: credential
+                            currentCredential: credential,
+                            password: evext.encodeString(password)
                         }), () => { return })
 
                         resolve(true)
@@ -160,22 +178,54 @@ namespace auth {
          */
         public renewUserSession = (ouid: string) => {
             return new Promise((resolve, reject) => {
-                localdb.read(`auth/users/${ouid}.json`, (data, err) => {
+                LocalDB.read(`auth/users/${ouid}.json`, (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject with the error message
                     } else {
                         data = JSON.parse(data)
                         data.currentCredential = this.generateSessionCredential()
                         
-                        localdb.write(`auth/users/${ouid}.json`, (data1, err1) => {
+                        LocalDB.write(`auth/users/${ouid}.json`, JSON.stringify(data), (data1: any, err1: any) => {
                             if (err1) {
                                 reject(err1) // reject with other error message
                             } else {
-                                resolve(true) // session has been renewed
+                                resolve(data.currentCredential) // session has been renewed
                             }
                         })
                     }
                 })
+            })
+        }
+
+        /**
+         * @func AuthDatabase.login
+         * @description Verifies the user's access information, and then generates new user credentials
+         * 
+         * @param {string} ouid - The puid of the user that is signing in
+         * @param {string} password - The user's entered password that will be compared to the stored password
+         * @returns {Promise} Promise object returning either the user's new credentials, or an error message
+         */
+        public login = (ouid: string, password: string) => {
+            return new Promise((resolve, reject) => {
+                /*
+                 * oxvs/auth/login:
+                 * - use getUser() to fetch the user information for the database
+                 * - decode the password with evext and compare the password given
+                 * - return based on if the passwords match
+                 * - if they do:
+                 *  - return new session credentials after renewing them
+                 * - if they don't:
+                 *  - return an error message
+                 */
+
+                this.getUser(ouid)
+                    .then((data: any) => {
+                        if (evext.decodeString(data.password) === password) {
+                            this.renewUserSession(ouid)
+                                .then((newCredential) => resolve(newCredential))
+                                .catch((err) => reject(err))
+                        } else { reject("Passwords do not match.") }
+                    }).catch((err) => reject(err))
             })
         }
     }

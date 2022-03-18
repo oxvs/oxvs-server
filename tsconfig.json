@@ -4,6 +4,7 @@
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
       /* "removeComments": true, */
+      "strict": true,
       "outFile": "package/dist.js",
       "types": [
         "node",
