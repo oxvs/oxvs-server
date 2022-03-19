@@ -63,7 +63,7 @@ namespace s2s {
      * @param {reqcontent} content 
      * @returns {string} A URL-friendly string containing the information from the content
      * 
-     * @deprecated Since version 0.0.3 due to the fetch() api being preferred
+     * @deprecated Since version 0.0.2 due to the fetch() api being preferred
      */
     export function contentToString(content: reqcontent | string) {
         if (typeof content === "string") { return content }

@@ -48,7 +48,7 @@ namespace auth {
     export class Validator {
         type: string
 
-        constructor(props: any) {
+        constructor(props: { type: "o.object" }) {
             this.type = props.type
         }
 
@@ -76,7 +76,7 @@ namespace auth {
          */
         public validateObjectRequest = (owner: string, user: string, id: string) => {
             return new Promise((resolve, reject) => {
-                if (this.type !== "object") { return reject("Incorrect validator type") }
+                if (this.type !== "o.object") { return reject("Incorrect validator type") }
                 LocalDB.read(`auth/bucket/${owner}/${id}.json`, (data: any, err: string) => { 
                     if (err) {
                         reject(err) // reject the promise and return an error
@@ -84,13 +84,13 @@ namespace auth {
                         if (forceValidation) {
                             // validate request
                             if (user !== owner && data["$oxvs"].shareList.includes(user)) {
-                                resolve(true) // return data
+                                resolve(true) // return true
                             } else {
-                                reject(false) // don't return data
+                                reject(false) // don't return true
                             }
                         } else {
                             // oh you're requesting this object? okay! (allow anybody through)
-                            resolve(true) // return data
+                            resolve(true) // return true
                         }
                     }
                 })
@@ -116,6 +116,10 @@ namespace auth {
          * 
          * @param {string} ouid User's server ID
          * @returns {Promise} Promise object returning either the user's data, or an error message
+         * 
+         * @example
+         * authdb.getUser("@user:test!o.host[server.oxvs.net]")
+         *    .catch((err) => console.error(err))
          */
         public getUser = (ouid: string) => {
             return new Promise((resolve, reject) => {
@@ -147,6 +151,10 @@ namespace auth {
          * @param {string} username The user's requested username
          * @param {string} password The user's entered password
          * @returns {Promise} Promise object returning either true, or an error message
+         * 
+         * @example
+         * authdb.newUser("test", "testpassword")
+         *    ?.catch((err) => console.error(err));
          */
         public newUser = (username: string, password: string) => {
             if (!doAllowNewUser) { return }
@@ -217,6 +225,11 @@ namespace auth {
          * @param {string} ouid - The puid of the user that is signing in
          * @param {string} password - The user's entered password that will be compared to the stored password
          * @returns {Promise} Promise object returning either the user's new credentials, or an error message
+         * 
+         * @example
+         * authdb.login("@user:test!o.host[server.oxvs.net]", "testpassword")
+         *    .then((credentials) => console.log(credentials))
+         *    .catch((err) => console.error(err))
          */
         public login = (ouid: string, password: string) => {
             return new Promise((resolve, reject) => {

@@ -35,6 +35,7 @@ namespace sync {
          * - contains information about an object
          * - props:
          *  - {string} objectId
+         *  - {string} ouid
          */
 
         return new Promise((resolve, reject) => {
@@ -51,6 +52,16 @@ namespace sync {
                             reject(false) // the current session is invalid
                         }
                     }).catch((err) => reject(err))
+            } else if (type === "o.object" && props.objectId && props.ouid) {
+                // create a database entry so we can fetch the object info
+                const database = new bucket.ObjectHandler({})
+                
+                // begin syncing
+                database.get(props.objectId, props.ouid)
+                    .then((data) => {
+                        resolve(data) // resend the data
+                    })
+                    .catch((err) => reject(err))
             }
         })
     }

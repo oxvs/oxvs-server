@@ -72,7 +72,7 @@ namespace bucket {
         public get(id: string, requestFrom: string) {
             // create object validator
             const validator = new auth.Validator({
-                type: 'object'
+                type: 'o.object'
             })
 
             // create promise
@@ -112,7 +112,7 @@ namespace bucket {
             return new Promise((resolve, reject) => {
                 // create object validator
                 const validator = new auth.Validator({
-                    type: 'object'
+                    type: 'o.object'
                 })
 
                 // create promise
