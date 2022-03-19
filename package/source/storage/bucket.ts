@@ -1,4 +1,5 @@
 /// <reference path="../init.ts" />
+/// <reference path="../crypto/evext.ts" />
 require('dotenv').config()
 
 /**
@@ -38,9 +39,19 @@ namespace bucket {
          * 
          * @param {object} data - The data that will be saved as a new bucket/object
          * @param {array} shareList - A list of user IDs that have access to the resource
+         * @param {boolean} encrypt - Controls the encryption level of the data
          * @returns {Promise} Promise object returning either the ID or an error message
+         * 
+         * @example
+         * objdb.upload({
+         *   __data: [
+         *    { type: 'o.encrypted', value: 'Hello, world!' }
+         *   ]
+         * }, true, [ "@user:test1!o.host[server.oxvs.net]" ]).then((id: any) => {
+         *    console.log(id)
+         * })
          */
-        public upload(data: any, shareList: string[]) {
+        public upload(data: any, encrypt: boolean, shareList: string[]) {
             // generate id
             const objectId = _crypto.randomUUID()
 
@@ -51,6 +62,24 @@ namespace bucket {
 
             // write data
             return new Promise((resolve, reject) => {
+                if (!data.__data) { reject("Object should contain __data value.") }
+
+                if (!encrypt) { 
+                    data["$oxvs"].type = "o.rawdata"
+                    data.__data = JSON.stringify(data.__data) 
+                } else {
+                    data["$oxvs"].type = "o.encrypted"
+
+                    // set all objects with a type of "o.encrypted" to have an encrypted value
+                    for (let _object of data.__data) {
+                        if (typeof _object === "object") {
+                            if (_object.type === "o.encrypted") {
+                                data.__data[data.__data.indexOf(_object)].value = evext.encodeString(_object.value)
+                            }
+                        }
+                    }
+                }
+                
                 LocalDB.write(`bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
@@ -68,6 +97,11 @@ namespace bucket {
          * @param {string} id - The objectId of the requested object 
          * @param {string} requestFrom - The ouid of the user requesting the object
          * @returns {Promise} Promise object returning the data or an error message
+         * 
+         * @example
+         * objdb.get(id, "@user:test!o.host[server.oxvs.net]")
+         *   .then((data: any) => console.log(data[0].value))
+         *   .catch((err) => console.error(err))
          */
         public get(id: string, requestFrom: string) {
             // create object validator
@@ -81,18 +115,37 @@ namespace bucket {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
+                        data = JSON.parse(data)
                         if (forceValidation) {
                             // validate request
                             validator.validateObjectRequest(this.sender, requestFrom, id)
                                 .then(() => {
-                                    resolve(data) // return data
+                                    if (data["$oxvs"].type === "o.encrypted") { 
+                                        // decrypt all objects with a type of "o.encrypted"
+                                        for (let _object of data.__data) {
+                                            if (typeof _object === "object") {
+                                                if (_object.type === "o.encrypted") {
+                                                    data.__data[data.__data.indexOf(_object)].value = evext.decodeString(_object.value)
+                                                }
+                                            }
+                                        }
+
+                                        // return decoded data
+                                        resolve(data.__data)
+                                    } else if (data["$oxvs"].type === "o.rawdata") { 
+                                        resolve(data.__data) // return data
+                                    }
                                 })
                                 .catch((err) => {
                                     reject(err) // validation failed
                                 })
                         } else {
                             // oh you're requesting this object? okay! (allow anybody through)
-                            resolve(data) // return data
+                            if (data["$oxvs"].type !== "o.encrypted") {
+                                resolve(data.__data)
+                            } else {
+                                resolve("**Cannot decrypt without forceValidation (https://docs.oxvs.net/global.html#forceValidation)**")
+                            }
                         }
                     }
                 })

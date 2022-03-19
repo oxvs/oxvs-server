@@ -83,7 +83,7 @@ namespace auth {
                     } else {
                         if (forceValidation) {
                             // validate request
-                            if (user !== owner && data["$oxvs"].shareList.includes(user)) {
+                            if (user === owner || data["$oxvs"].shareList.includes(user)) {
                                 resolve(true) // return true
                             } else {
                                 reject(false) // don't return true

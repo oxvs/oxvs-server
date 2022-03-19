@@ -64,12 +64,14 @@ console.log("Run with no issues.")
     })
 
     objdb.upload({
-        data: "Hello, world!"
-    }, [
-        "@user:test1!o.host[server.oxvs.net]",
-        "@user:test2!o.host[server.oxvs.net]",
-        "@user:test3!o.host[server.oxvs.net]"
-    ])
+        __data: [
+            { type: 'o.encrypted', value: 'Hello, world!' }
+        ]
+    }, true, [ "@user:test1!o.host[server.oxvs.net]" ]).then((id: any) => {
+        objdb.get(id, "@user:test!o.host[server.oxvs.net]")
+            .then((data: any) => console.log(data[0].value))
+            .catch((err) => console.error(err))
+    })
 }
 
 test() */

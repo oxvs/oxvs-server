@@ -15,6 +15,20 @@ require('dotenv').config()
 
 namespace evext {
     /**
+     * @global
+     * @name evextEscapes
+     * @description An array of all values in the CONTROL_ALPHABET that will be escaped to something else
+     * @example
+     * [
+     *   { escape: "[hash]", original: "#" }
+     * ]
+     */
+    export const evextEscapes = [
+        { escape: "[lsbracket]", original: "{" },
+        { escape: "[hash]", original: "#" }
+    ]
+
+    /**
      * @func evext.encodeString 
      * @description Encode a string using evext
      * 
@@ -24,6 +38,10 @@ namespace evext {
     export function encodeString(string: string): string {
         // for each character in the string, get the character's index in the encoding ruleset and then add that many zero-width spaces to the encoded string
         if (!process.env.CONTROL_ALPHABET) { return "" }
+        
+        for (let escape of evextEscapes) {
+            process.env.CONTROL_ALPHABET = process.env.CONTROL_ALPHABET.replaceAll(escape.escape, escape.original)
+        }
 
         let encodedString = ""
     

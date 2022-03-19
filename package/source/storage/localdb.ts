@@ -44,12 +44,12 @@ namespace LocalDB {
             if (err) {
                 return console.error(err)
             }
-        })
 
-        fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err: string) => {
-            if (err) {
-                return console.error(err)
-            }
+            fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err: string) => {
+                if (err) {
+                    return console.error(err)
+                }
+            })
         })
 
         dataPath = path.join(process.cwd(), "data")
@@ -67,6 +67,7 @@ namespace LocalDB {
      */
     export const read = function (path: string, callback: Function) {
         // return a callback containing the data of the requested document (or the error)
+        if (path.startsWith("auth/bucket/")) { path = path.split('auth/')[1] }
         fs.readFile(`${dataPath}/${path}`, 'utf-8', function (err: string, data: string) {
             if (err) {
                 if (callback) { return callback(data, err) }
