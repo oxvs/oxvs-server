@@ -58,8 +58,8 @@ namespace sync {
                 
                 // begin syncing
                 database.get(props.objectId, props.ouid)
-                    .then((data) => {
-                        resolve(data) // resend the data
+                    .then((data: any) => {
+                        resolve(data.__data) // resend the data
                     })
                     .catch((err) => reject(err))
             }

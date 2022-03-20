@@ -1,5 +1,6 @@
 /// <reference path="../init.ts" />
 /// <reference path="localdb.ts" />
+/// <reference path="bucket.ts" />
 /// <reference path="../crypto/evext.ts" />
 
 const _crypto = require("crypto")
@@ -48,21 +49,62 @@ namespace auth {
     export class Validator {
         type: string
 
-        constructor(props: { type: "o.object" }) {
+        constructor(props: { type: "o.object" | "o.http" }) {
             this.type = props.type
         }
 
         /**
          * @func Validator.validateUserRequest
-         * @description Validate a user request based on sent credentials
+         * @description Validate a user request based on request headers
          * 
-         * @param {string} credentials User access token
-         * @param {string} ouid User's server ID
+         * @param {any} request The send request object
+         * @param {string} requestFor What the request is looking for
          * @returns {boolean} Approval or denial of request
          */
-        public validateUserRequest = (credentials: string, ouid: string) => {
-            if (this.type !== "user") { return ("Incorrect validator type") }
+        public validateUserRequest = (request: any, requestFor: "o.bucket" | "o.token") => {
+            return new Promise((resolve, reject) => {
+                if (this.type !== "o.http") { return reject("Incorrect validator type") }
 
+                // get information
+                const { id } = request.params
+                const headers = request.headers
+
+                const authorization = headers.authorization
+                const ouid = authorization.split("(::AT::)")[0] // should be the ouid of the user
+                const token = authorization.split("(::AT::)")[1] // should be a token in the user's activesessions
+
+                // get bucket
+                const authdb = new auth.AuthDatabase({})
+                if (requestFor === "o.bucket") {
+                    const objdb = new bucket.ObjectHandler({
+                        sender: ouid
+                    })
+
+                    objdb.get(id, ouid)
+                        .then((data: any) => {
+                            // get already validates the request, now we just need to fetch the user
+                            authdb.getUser(data["$oxvs"].sender)
+                                .then((user: any) => {
+                                    // validate the token
+                                    if (user.activeSessions.includes(token)) {
+                                        resolve(data.__data)
+                                    } else {
+                                        reject(false)
+                                    }
+                                }).catch((err) => reject(err))
+                        }).catch((err) => reject(err))
+                } else if (requestFor === "o.token") {
+                    authdb.getUser(ouid)
+                        .then((user: any) => {
+                            // validate the token
+                            if (user.activeSessions.includes(token)) {
+                                resolve(true)
+                            } else {
+                                reject(false)
+                            }
+                        }).catch((err) => reject(err))
+                }
+            })
         }
 
         /**
@@ -77,7 +119,7 @@ namespace auth {
         public validateObjectRequest = (owner: string, user: string, id: string) => {
             return new Promise((resolve, reject) => {
                 if (this.type !== "o.object") { return reject("Incorrect validator type") }
-                LocalDB.read(`auth/bucket/${owner}/${id}.json`, (data: any, err: string) => { 
+                LocalDB.read(`auth/bucket/${owner}/${id}.json`, (data: any, err: string) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
                     } else {
@@ -141,7 +183,7 @@ namespace auth {
          * @returns {string} Session Credential
          */
         private generateSessionCredential = () => {
-            return (performance.now().toString(36)+Math.random().toString(36)).replace(/\./g,"")
+            return (performance.now().toString(36) + Math.random().toString(36)).replace(/\./g, "")
         }
 
         /**
@@ -173,7 +215,7 @@ namespace auth {
                             password: evext.encodeString(password),
                             uuid: _crypto.randomUUID(),
                             activeSessions: [credential] // store credentials
-                        }), (err?: string) => { 
+                        }), (err?: string) => {
                             if (err) {
                                 reject(err) // error occured
                             } else {
@@ -205,7 +247,7 @@ namespace auth {
                         data = JSON.parse(data)
                         data.currentCredential = this.generateSessionCredential()
                         data.activeSessions.push(data.currentCredential)
-                        
+
                         LocalDB.write(`users/${ouid}.json`, JSON.stringify(data), (data1: any, err1: any) => {
                             if (err1) {
                                 reject(err1) // reject with other error message

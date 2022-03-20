@@ -14,6 +14,7 @@ namespace LocalDB {
     const path = require("path")
 
     let dataPath = path.join(process.cwd(), "data")
+    let onUpdated = () => {} // Function that will run whenever data is updated
 
     /**
      * @func LocalDB.createDB
@@ -35,22 +36,26 @@ namespace LocalDB {
 
         // create a folder in "process.cwd()" named "data" that stores JSON files for the DB
 
-        const dbBase = [{
-            name: name,
-            lastUpdated: new Date().toLocaleString()
-        }]
-
-        fs.mkdir(path.join(__dirname, 'data'), { recursive: true }, (err: string) => {
-            if (err) {
-                return console.error(err)
-            }
-
-            fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err: string) => {
+        onUpdated = () => {
+            const dbBase = [{
+                name: name,
+                lastUpdated: new Date().toLocaleString()
+            }]
+    
+            fs.mkdir(path.join(__dirname, 'data'), { recursive: true }, (err: string) => {
                 if (err) {
                     return console.error(err)
                 }
+    
+                fs.writeFile(path.join(process.cwd(), "/data", "db.json"), JSON.stringify(dbBase), 'utf-8', (err: string) => {
+                    if (err) {
+                        return console.error(err)
+                    }
+                })
             })
-        })
+        }
+
+        onUpdated()
 
         dataPath = path.join(process.cwd(), "data")
         if (this.logStatus === true) { console.log("[LocalDB]: Successful startup!") }
@@ -103,6 +108,7 @@ namespace LocalDB {
                         }
                     })
                     previousWriteDir = datapoint + "/"
+                    onUpdated()
                 }
             }
         }
@@ -113,6 +119,7 @@ namespace LocalDB {
                 if (callback) { return callback(err) }
                 return err
             } else {
+                onUpdated()
                 if (callback) { return callback() }
             }
         })
@@ -135,6 +142,7 @@ namespace LocalDB {
                 if (callback) { return callback(err) }
                 return err
             } else {
+                onUpdated()
                 if (callback) { return callback(true) } // file deleted
             }
         })

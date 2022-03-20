@@ -122,7 +122,7 @@ namespace s2s {
             return new Promise((resolve, reject) => {
                 fetch(props.destination, {
                     method: 'GET',
-                    body: JSON.stringify(props.body),
+                    /* body: JSON.stringify(props.body), */
                     headers: props.headers
                 }).then((response) => response.json())
                 .then((json) => resolve(json))

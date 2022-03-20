@@ -68,7 +68,7 @@ namespace bucket {
             // props.sender is basically just who the object belongs to
             // a little weird to be named this.sender later on though, so remember that
             this.sender = props.sender
-            console.log("Created an ObjectHandler object with no issues.")
+            console.log(`Created an ObjectHandler object with no issues. (${this.sender})`)
         }
 
         /**
@@ -97,6 +97,7 @@ namespace bucket {
             data["$oxvs"] = {}
             data["$oxvs"].sender = this.sender
             data["$oxvs"].shareList = shareList
+            data["$oxvs"].shareList.push("@0")
 
             // write data
             return new Promise((resolve, reject) => {
@@ -130,7 +131,7 @@ namespace bucket {
          * 
          * @example
          * exampledb.get(id, "@user:test!o.host[server.oxvs.net]")
-         *   .then((data: any) => console.log(data[0].value))
+         *   .then((data: any) => console.log(data[0].__data.value))
          *   .catch((err) => console.error(err))
          */
         public get(id: string, requestFrom: string) {
@@ -155,9 +156,9 @@ namespace bucket {
                                         data = decryptObject(data)
 
                                         // return decoded data
-                                        resolve(data.__data)
+                                        resolve(data)
                                     } else if (data["$oxvs"].type === "o.rawdata") {
-                                        resolve(data.__data) // return data
+                                        resolve(data) // return data
                                     }
                                 })
                                 .catch((err) => {
@@ -166,7 +167,7 @@ namespace bucket {
                         } else {
                             // oh you're requesting this object? okay! (allow anybody through)
                             if (data["$oxvs"].type !== "o.encrypted") {
-                                resolve(data.__data)
+                                resolve(data)
                             } else {
                                 resolve("**Cannot decrypt without forceValidation (https://docs.oxvs.net/global.html#forceValidation)**")
                             }
@@ -239,26 +240,38 @@ namespace bucket {
             return new Promise((resolve, reject) => {
                 // this.get already validates requests
                 this.get(id, requestFrom)
-                    .then((data: any) => {
+                    .then((__DECRYPTED: any) => {
                         // if we got to this point, the request has already been validated
-                        // set data.__data to be newData or newData.__data
-                        if (newData.__data) { data.__data = newData.__data }
-                        else { data.__data = newData }
-
-                        data = encryptObject(data) // re-encrypt the decrypted object this.get sends us
-
-                        // update file
-                        LocalDB.write(`bucket/${this.sender}/${id}.json`, JSON.stringify(data), (data: any, err: string) => {
+                        LocalDB.read(`/bucket/${this.sender}/${id}.json`, (data: any, err: any) => {
                             if (err) {
                                 reject(err)
                             } else {
-                                // resolve with success
-                                resolve(true)
+                                data.__data = __DECRYPTED.__data
+
+                                // set data.__data to be newData or newData.__data
+                                if (newData.__data) { data.__data = newData.__data }
+                                else { data.__data = newData }
+
+                                data = encryptObject(data) // re-encrypt the decrypted object this.get sends us
+
+                                // update file
+                                LocalDB.write(`bucket/${this.sender}/${id}.json`, JSON.stringify(data), (data: any, err: string) => {
+                                    if (err) {
+                                        reject(err)
+                                    } else {
+                                        // resolve with success
+                                        resolve(true)
+                                    }
+                                })
                             }
                         })
                     })
                     .catch((err) => reject(err))
             })
+        }
+
+        public getWithID(id: string) {
+
         }
     }
 }

@@ -2,6 +2,16 @@
 /// <reference path="storage/auth.ts" />
 /// <reference path="storage/bucket.ts" />
 
+/**
+ * @global
+ * @name DATA_PATH
+ * @description The local path to where data is stored
+ * @default "Supplied by LocalDB"
+ */
+const DATA_PATH = LocalDB.createDB("oxvs", {
+    logStatus: true
+})
+
 // some jsdoc stuff
 
 /**
@@ -30,19 +40,77 @@ const doAllowNewUser = true
  */
 const forceValidation = true
 
-/**
- * @typedef {object} user
- * @typedef {object} userCredential 
- */
-interface user { host: string, username: string, ouid: string, currentCredential: string, tag: "o.user" }
-interface userCredential { ouid: string, tag: "o.userCredential" }
-/**
- * @global
- * @typedef {object} upload
- */
-interface upload { sender: string, tag: "o.upload" }
+// server
 
-console.log("Run with no issues.")
+const express = require("express")
+const api = express()
+api.use(express.json())
+api.listen(8080, () => { console.log("Local server active") })
+
+// auth
+api.post("/api/v1/auth/login", (request: any, response: any) => {
+    const { ouid, password } = request.body
+    if (forceValidation) {
+        if (!ouid || !password) {
+            response.status(400).send("Invalid credentials")
+            return
+        }
+    }
+    const authdb = new auth.AuthDatabase(DATA_PATH)
+    authdb.login(ouid, password).then(token => {
+        response.status(200).send({ token: token })
+    }).catch(error => {
+        response.status(400).send(error)
+    })
+})
+
+// bucket
+api.get("/api/v1/bucket/get/:id", (request: any, response: any) => {
+    // create a new object handler
+    const validator = new auth.Validator({
+        type: "o.http"
+    })
+
+    // validate the request
+    validator.validateUserRequest(request, "o.bucket")
+        .then((data: any) => {
+            response.status(200).send(data)
+        }).catch((err: any) => {
+            response.status(401).send({ message: "Unauthorized", response: err })
+        })
+})
+
+api.post("/api/v1/bucket/upload", (request: any, response: any) => {
+    /*
+     * Example:
+     * 
+     *
+     */
+
+    // create a new object handler
+    const validator = new auth.Validator({
+        type: "o.http"
+    })
+
+    const authorization = request.headers.authorization
+    const ouid = authorization.split("(::AT::)")[0] // should be the ouid of the user
+
+    // validate the request
+    validator.validateUserRequest(request, "o.token")
+        .then(() => {
+            const objdb = new bucket.ObjectHandler({
+                sender: ouid
+            })
+
+            objdb.upload(request.body.data, request.body.encrypted, request.body.shareList).then((id: any) => {
+                response.status(200).send({ id: id })
+            }).catch((err) => {
+                response.status(400).send({ message: "Error uploading object", response: err })
+            })
+        }).catch((err: any) => {
+            response.status(401).send({ message: "Unauthorized", response: err })
+        })
+})
 
 /* function test() {
     // auth
