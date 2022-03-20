@@ -118,7 +118,7 @@ namespace auth {
          * @returns {Promise} Promise object returning either the user's data, or an error message
          * 
          * @example
-         * authdb.getUser("@user:test!o.host[server.oxvs.net]")
+         * exampledb.getUser("@user:test!o.host[server.oxvs.net]")
          *    .catch((err) => console.error(err))
          */
         public getUser = (ouid: string) => {
@@ -153,7 +153,7 @@ namespace auth {
          * @returns {Promise} Promise object returning either true, or an error message
          * 
          * @example
-         * authdb.newUser("test", "testpassword")
+         * exampledb.newUser("test", "testpassword")
          *    ?.catch((err) => console.error(err));
          */
         public newUser = (username: string, password: string) => {
@@ -227,7 +227,7 @@ namespace auth {
          * @returns {Promise} Promise object returning either the user's new credentials, or an error message
          * 
          * @example
-         * authdb.login("@user:test!o.host[server.oxvs.net]", "testpassword")
+         * exampledb.login("@user:test!o.host[server.oxvs.net]", "testpassword")
          *    .then((credentials) => console.log(credentials))
          *    .catch((err) => console.error(err))
          */

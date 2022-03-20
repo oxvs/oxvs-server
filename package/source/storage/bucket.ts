@@ -20,6 +20,44 @@ namespace bucket {
     // ex: https://oxvs.oxvs.net/api/v1/object/upload
 
     /**
+     * @func bucket.encryptObject
+     * @description Encrypt all values in an object that are tagged with "o.encrypted"
+     * 
+     * @param {object} data - The object to encrypt
+     * @returns {object} Data object with values encrypted
+     */
+    export function encryptObject(data: any) {
+        for (let _object of data.__data) {
+            if (typeof _object === "object") {
+                if (_object.type === "o.encrypted") {
+                    data.__data[data.__data.indexOf(_object)].value = evext.encodeString(_object.value)
+                }
+            }
+        }
+
+        return data
+    }
+
+    /**
+     * @func bucket.decryptObject
+     * @description Decrypt all values in an object that are tagged with "o.encrypted"
+     * 
+     * @param {object} data - The object to decrypt 
+     * @returns {object} Data object with values decrypted 
+     */
+    export function decryptObject(data: any) {
+        for (let _object of data.__data) {
+            if (typeof _object === "object") {
+                if (_object.type === "o.encrypted") {
+                    data.__data[data.__data.indexOf(_object)].value = evext.decodeString(_object.value)
+                }
+            }
+        }
+
+        return data
+    }
+
+    /**
      * Upload data to server
      * @class ObjectHandler
      */
@@ -40,10 +78,10 @@ namespace bucket {
          * @param {object} data - The data that will be saved as a new bucket/object
          * @param {array} shareList - A list of user IDs that have access to the resource
          * @param {boolean} encrypt - Controls the encryption level of the data
-         * @returns {Promise} Promise object returning either the ID or an error message
+         * @returns {Promise} Promise object returning either the object ID, or an error message
          * 
          * @example
-         * objdb.upload({
+         * exampledb.upload({
          *   __data: [
          *    { type: 'o.encrypted', value: 'Hello, world!' }
          *   ]
@@ -64,22 +102,14 @@ namespace bucket {
             return new Promise((resolve, reject) => {
                 if (!data.__data) { reject("Object should contain __data value.") }
 
-                if (!encrypt) { 
+                if (!encrypt) {
                     data["$oxvs"].type = "o.rawdata"
-                    data.__data = JSON.stringify(data.__data) 
+                    data.__data = JSON.stringify(data.__data)
                 } else {
                     data["$oxvs"].type = "o.encrypted"
-
-                    // set all objects with a type of "o.encrypted" to have an encrypted value
-                    for (let _object of data.__data) {
-                        if (typeof _object === "object") {
-                            if (_object.type === "o.encrypted") {
-                                data.__data[data.__data.indexOf(_object)].value = evext.encodeString(_object.value)
-                            }
-                        }
-                    }
+                    data = encryptObject(data)
                 }
-                
+
                 LocalDB.write(`bucket/${this.sender}/${objectId}.json`, JSON.stringify(data), (data: any, err: any) => {
                     if (err) {
                         reject(err) // reject the promise and return an error
@@ -96,10 +126,10 @@ namespace bucket {
          * 
          * @param {string} id - The objectId of the requested object 
          * @param {string} requestFrom - The ouid of the user requesting the object
-         * @returns {Promise} Promise object returning the data or an error message
+         * @returns {Promise} Promise object returning either the data, or an error message
          * 
          * @example
-         * objdb.get(id, "@user:test!o.host[server.oxvs.net]")
+         * exampledb.get(id, "@user:test!o.host[server.oxvs.net]")
          *   .then((data: any) => console.log(data[0].value))
          *   .catch((err) => console.error(err))
          */
@@ -120,19 +150,13 @@ namespace bucket {
                             // validate request
                             validator.validateObjectRequest(this.sender, requestFrom, id)
                                 .then(() => {
-                                    if (data["$oxvs"].type === "o.encrypted") { 
+                                    if (data["$oxvs"].type === "o.encrypted") {
                                         // decrypt all objects with a type of "o.encrypted"
-                                        for (let _object of data.__data) {
-                                            if (typeof _object === "object") {
-                                                if (_object.type === "o.encrypted") {
-                                                    data.__data[data.__data.indexOf(_object)].value = evext.decodeString(_object.value)
-                                                }
-                                            }
-                                        }
+                                        data = decryptObject(data)
 
                                         // return decoded data
                                         resolve(data.__data)
-                                    } else if (data["$oxvs"].type === "o.rawdata") { 
+                                    } else if (data["$oxvs"].type === "o.rawdata") {
                                         resolve(data.__data) // return data
                                     }
                                 })
@@ -158,42 +182,82 @@ namespace bucket {
          * 
          * @param {string} id - The objectId of the request object
          * @param {string} requestFrom - The ouid of the user requesting the object
-         * @returns {Promise} Promise object returning true of an error message
+         * @returns {Promise} Promise object returning either true, or an error message
          */
         public delete(id: string, requestFrom: string) {
             // delete file
-            return new Promise((resolve, reject) => {
-                // create object validator
-                const validator = new auth.Validator({
-                    type: 'o.object'
-                })
 
-                // create promise
-                return new Promise((resolve, reject) => {
-                    function _delete(this: any) {
-                        LocalDB.unlink(`bucket/${this.sender}/${id}.json`, (err: any) => {
-                            if (err !== true) {
+            // create object validator
+            const validator = new auth.Validator({
+                type: 'o.object'
+            })
+
+            // create promise
+            return new Promise((resolve, reject) => {
+                function _delete(this: any) {
+                    LocalDB.unlink(`bucket/${this.sender}/${id}.json`, (err: any) => {
+                        if (err !== true) {
+                            reject(err)
+                        } else {
+                            resolve(true) // resolve
+                        }
+                    })
+                }
+
+                if (forceValidation) {
+                    // validate request
+                    validator.validateObjectRequest(this.sender, requestFrom, id)
+                        .then(() => {
+                            _delete() // delete file
+                        })
+                        .catch((err) => {
+                            reject(err) // validation failed
+                        })
+                } else {
+                    // oh you're requesting this object? okay! (allow anybody through)
+                    _delete() // delete file
+                }
+            })
+        }
+
+        /**
+         * @func ObjectHandler.update
+         * @description Update an object with new data by using the ID
+         * 
+         * @param {string} id - The objectId of the request object
+         * @param {string} requestFrom - The ouid of the user requesting the object
+         * @param {object} newData - The new data to write to the file (replaces)
+         * @returns {Promise} Promise object returning either true, or an error message
+         * 
+         * @example
+         * exampledb.update("2a2d0b59-9a2d-47ab-9488-23f5766a1413", "@user:test!o.host[server.oxvs.net]", {
+         *   { type: 'o.encrypted', value: 'Updated Data' }
+         * }).catch((err) => console.log(err))
+         */
+        public update(id: string, requestFrom: string, newData: any) {
+            // update file
+            return new Promise((resolve, reject) => {
+                // this.get already validates requests
+                this.get(id, requestFrom)
+                    .then((data: any) => {
+                        // if we got to this point, the request has already been validated
+                        // set data.__data to be newData or newData.__data
+                        if (newData.__data) { data.__data = newData.__data }
+                        else { data.__data = newData }
+
+                        data = encryptObject(data) // re-encrypt the decrypted object this.get sends us
+
+                        // update file
+                        LocalDB.write(`bucket/${this.sender}/${id}.json`, JSON.stringify(data), (data: any, err: string) => {
+                            if (err) {
                                 reject(err)
                             } else {
-                                resolve(true) // resolve
+                                // resolve with success
+                                resolve(true)
                             }
                         })
-                    }
-
-                    if (forceValidation) {
-                        // validate request
-                        validator.validateObjectRequest(this.sender, requestFrom, id)
-                            .then(() => {
-                                _delete() // delete file
-                            })
-                            .catch((err) => {
-                                reject(err) // validation failed
-                            })
-                    } else {
-                        // oh you're requesting this object? okay! (allow anybody through)
-                        _delete() // delete file
-                    }
-                })
+                    })
+                    .catch((err) => reject(err))
             })
         }
     }
