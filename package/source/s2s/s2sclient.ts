@@ -1,7 +1,7 @@
 /**
  * @file Server to Server communication
  * @name s2sclient.ts
- * @version 0.0.3
+ * @version 0.0.4
  * @author oxvs <admin@oxvs.net>
  */
 

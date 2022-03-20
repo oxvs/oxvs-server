@@ -9,7 +9,7 @@ const _crypto = require("crypto")
  * @file Manage the authentication section of the OXVS-SERVER
  * @name auth.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.3
+ * @version 0.0.4
  */
 
 /*
@@ -61,7 +61,7 @@ namespace auth {
          * @param {string} requestFor What the request is looking for
          * @returns {boolean} Approval or denial of request
          */
-        public validateUserRequest = (request: any, requestFor: "o.bucket" | "o.token") => {
+        public validateUserRequest = (request: any, requestFor: "o.bucketowner" | "o.token") => {
             return new Promise((resolve, reject) => {
                 if (this.type !== "o.http") { return reject("Incorrect validator type") }
 
@@ -75,7 +75,7 @@ namespace auth {
 
                 // get bucket
                 const authdb = new auth.AuthDatabase({})
-                if (requestFor === "o.bucket") {
+                if (requestFor === "o.bucketowner") {
                     const objdb = new bucket.ObjectHandler({
                         sender: ouid
                     })
@@ -196,12 +196,12 @@ namespace auth {
          * 
          * @example
          * exampledb.newUser("test", "testpassword")
-         *    ?.catch((err) => console.error(err));
+         *    .catch((err) => console.error(err));
          */
         public newUser = (username: string, password: string) => {
-            if (!doAllowNewUser) { return }
             const ouid = `@user:${username}!o.host[${HOST_SERVER}]` // create an id for the user
             return new Promise((resolve, reject) => {
+                if (!doAllowNewUser) { reject("New users cannot be created in this host.") }
                 LocalDB.read(`users/${ouid}.json`, (data: any, err: any) => {
                     if (err) {
                         // assume this means the user doesn't exist yet

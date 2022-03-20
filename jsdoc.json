@@ -28,6 +28,11 @@
                     "title": "Zerobase",
                     "id": "zerobasehome",
                     "link": "https://zbase.dev"
+                },
+                {
+                    "title": "Github",
+                    "id": "gitlink",
+                    "link": "https://github.com/0aoq/oxvs-server"
                 }
             ],
             "resizeable": {

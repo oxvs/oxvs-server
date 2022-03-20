@@ -1,7 +1,7 @@
 /**
  * @file Handle client object state syncing
  * @name sync.ts
- * @version 0.0.3
+ * @version 0.0.4
  * @author oxvs <admin@oxvs.net>
  */
 

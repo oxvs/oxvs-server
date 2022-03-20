@@ -3,6 +3,13 @@
 /// <reference path="storage/bucket.ts" />
 
 /**
+ * @file Handle HTTP requests
+ * @name index.ts
+ * @author oxvs <admin@oxvs.net>
+ * @version 0.0.4
+ */
+
+/**
  * @global
  * @name DATA_PATH
  * @description The local path to where data is stored
@@ -47,16 +54,20 @@ const api = express()
 api.use(express.json())
 api.listen(8080, () => { console.log("Local server active") })
 
+api.get("/", (request: any, response: any) => {
+    response.status(403).send("Forbidden")
+})
+
 // auth
 api.post("/api/v1/auth/login", (request: any, response: any) => {
+    // http://localhost:8080/api/v1/auth/login
     const { ouid, password } = request.body
-    if (forceValidation) {
-        if (!ouid || !password) {
-            response.status(400).send("Invalid credentials")
-            return
-        }
+    if (!ouid || !password) {
+        response.status(400).send({ message: "Failed to create user", response: false })
+        return
     }
-    const authdb = new auth.AuthDatabase(DATA_PATH)
+
+    const authdb = new auth.AuthDatabase({})
     authdb.login(ouid, password).then(token => {
         response.status(200).send({ token: token })
     }).catch(error => {
@@ -64,15 +75,33 @@ api.post("/api/v1/auth/login", (request: any, response: any) => {
     })
 })
 
+api.post("/api/v1/auth/new", (request: any, response: any) => {
+    // http://localhost:8080/api/v1/auth/new
+    const { username, password } = request.body
+    if (!username || !password) {
+        response.status(400).send({ message: "Failed to create user", response: false })
+        return
+    }
+
+    const authdb = new auth.AuthDatabase({})
+    authdb.newUser(username, password)
+        .then(() => {
+            response.status(200).send({ message: "User created" })
+        }).catch(err => {
+            response.status(400).send({ message: "Failed to create user", response: err })
+        })
+})
+
 // bucket
 api.get("/api/v1/bucket/get/:id", (request: any, response: any) => {
+    // http://localhost:8080/api/v1/bucket/get/example-id
     // create a new object handler
     const validator = new auth.Validator({
         type: "o.http"
     })
 
     // validate the request
-    validator.validateUserRequest(request, "o.bucket")
+    validator.validateUserRequest(request, "o.bucketowner")
         .then((data: any) => {
             response.status(200).send(data)
         }).catch((err: any) => {
@@ -81,12 +110,7 @@ api.get("/api/v1/bucket/get/:id", (request: any, response: any) => {
 })
 
 api.post("/api/v1/bucket/upload", (request: any, response: any) => {
-    /*
-     * Example:
-     * 
-     *
-     */
-
+    // http://localhost:8080/api/v1/bucket/upload
     // create a new object handler
     const validator = new auth.Validator({
         type: "o.http"
@@ -112,34 +136,31 @@ api.post("/api/v1/bucket/upload", (request: any, response: any) => {
         })
 })
 
-/* function test() {
-    // auth
-    const authdb = new auth.AuthDatabase({})
-    authdb.newUser("test", "testpassword")
-        ?.catch((err) => console.error(err));
+api.delete("/api/v1/bucket/:id/delete", (request: any, response: any) => {
+    // http://localhost:8080/api/v1/bucket/example-id/delete
+    const { id } = request.params
 
-    authdb.getUser("@user:test!o.host[server.oxvs.net]")
+    // create a new object handler
+    const validator = new auth.Validator({
+        type: "o.http"
+    })
+
+    const authorization = request.headers.authorization
+    const ouid = authorization.split("(::AT::)")[0] // should be the ouid of the user
+
+    // validate the request
+    validator.validateUserRequest(request, "o.token")
         .then(() => {
-            // login test
-            authdb.login("@user:test!o.host[server.oxvs.net]", "testpassword")
-                .then((credentials) => console.log(credentials))
-                .catch((err) => console.error(err))
-        }).catch((err) => console.error(err))
+            const objdb = new bucket.ObjectHandler({
+                sender: ouid
+            })
 
-    // bucket
-    const objdb = new bucket.ObjectHandler({
-        sender: "@user:test!o.host[server.oxvs.net]"
-    })
-
-    objdb.upload({
-        __data: [
-            { type: 'o.encrypted', value: 'Hello, world!' }
-        ]
-    }, true, [ "@user:test1!o.host[server.oxvs.net]" ]).then((id: any) => {
-        objdb.get(id, "@user:test!o.host[server.oxvs.net]")
-            .then((data: any) => console.log(data[0].value))
-            .catch((err) => console.error(err))
-    })
-}
-
-test() */
+            objdb.delete(id, request.body.requestFrom).then(() => {
+                response.status(200).send({ message: "Object deleted" })
+            }).catch((err) => {
+                response.status(400).send({ message: "Error deleting object", response: err })
+            })
+        }).catch((err: any) => {
+            response.status(401).send({ message: "Unauthorized", response: err })
+        })
+})

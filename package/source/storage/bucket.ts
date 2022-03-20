@@ -6,7 +6,7 @@ require('dotenv').config()
  * @file Manage the bucket and storage section of the OXVS-SERVER
  * @name bucket.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.3
+ * @version 0.0.4
  */
 
 /// <reference path="auth.ts" />
@@ -195,7 +195,23 @@ namespace bucket {
 
             // create promise
             return new Promise((resolve, reject) => {
-                function _delete(this: any) {
+                if (forceValidation) {
+                    // validate request
+                    validator.validateObjectRequest(this.sender, requestFrom, id)
+                        .then(() => {
+                            LocalDB.unlink(`bucket/${this.sender}/${id}.json`, (err: any) => {
+                                if (err !== true) {
+                                    reject(err)
+                                } else {
+                                    resolve(true) // resolve
+                                }
+                            })
+                        })
+                        .catch((err) => {
+                            reject("Validation failed") // validation failed
+                        })
+                } else {
+                    // oh you're requesting this object? okay! (allow anybody through)
                     LocalDB.unlink(`bucket/${this.sender}/${id}.json`, (err: any) => {
                         if (err !== true) {
                             reject(err)
@@ -203,20 +219,6 @@ namespace bucket {
                             resolve(true) // resolve
                         }
                     })
-                }
-
-                if (forceValidation) {
-                    // validate request
-                    validator.validateObjectRequest(this.sender, requestFrom, id)
-                        .then(() => {
-                            _delete() // delete file
-                        })
-                        .catch((err) => {
-                            reject(err) // validation failed
-                        })
-                } else {
-                    // oh you're requesting this object? okay! (allow anybody through)
-                    _delete() // delete file
                 }
             })
         }
@@ -268,10 +270,6 @@ namespace bucket {
                     })
                     .catch((err) => reject(err))
             })
-        }
-
-        public getWithID(id: string) {
-
         }
     }
 }
