@@ -37,6 +37,7 @@ namespace evext {
      */
     export function encodeString(string: string): string {
         // for each character in the string, get the character's index in the encoding ruleset and then add that many zero-width spaces to the encoded string
+        if (typeof string !== "string") { return "" }
         if (!process.env.CONTROL_ALPHABET) { return "" }
         
         for (let escape of evextEscapes) {
@@ -67,6 +68,7 @@ namespace evext {
      * @returns {string} An encoded string, or a blank string
      */
     export function decodeString(string: string): string {
+        if (typeof string !== "string") { return "" }
         // for each group in the string (separated by .) get the index of the group and then the index of the character in the encoding ruleset and then add it to the decoded string
         if (!process.env.CONTROL_ALPHABET) { return "" }
     

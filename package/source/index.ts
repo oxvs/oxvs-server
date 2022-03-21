@@ -50,8 +50,18 @@ const forceValidation = true
 // server
 
 const express = require("express")
+const rateLimit = require("express-rate-limit")
+
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 500,
+	standardHeaders: true,
+	legacyHeaders: false,
+})
+
 const api = express()
 api.use(express.json())
+api.use(limiter) // handle rate limiting
 api.listen(8080, () => { console.log("Local server active") })
 
 api.get("/", (request: any, response: any) => {
