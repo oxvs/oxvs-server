@@ -3,7 +3,8 @@
     "express": "^4.17.3",
     "express-rate-limit": "^6.3.0",
     "node-fetch": "^3.2.3",
-    "typescript": "^4.6.2"
+    "typescript": "^4.6.2",
+    "vercel": "^24.0.1"
   },
   "devDependencies": {
     "@types/node": "^17.0.21",
@@ -16,11 +17,12 @@
   "main": "package/dist.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tsc; npx jsdoc --configure jsdoc.json --verbose"
+    "build": "npx tsc; npx jsdoc --configure jsdoc.json --verbose",
+    "deploy": "npm run build; npx vercel --prod"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/0aoq/oxvs-server.git"
+    "url": "git+https://github.com/oxvs/oxvs-server.git"
   },
   "keywords": [
     "oxvs-server"
@@ -28,8 +30,8 @@
   "author": "oxvsdev",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/0aoq/oxvs-server/issues"
+    "url": "https://github.com/oxvs/oxvs-server/issues"
   },
-  "homepage": "https://github.com/0aoq/oxvs-server#readme",
+  "homepage": "https://docs.oxvs.net",
   "description": ""
 }
