@@ -2,11 +2,18 @@
 /// <reference path="storage/auth.ts" />
 /// <reference path="storage/bucket.ts" />
 
+let port = 8080
+process.argv.forEach(function (value, index, array) {
+    if (index === 2) {
+        port = parseFloat(value) // set port
+    }
+})
+
 /**
  * @file Handle HTTP requests
  * @name index.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.4
+ * @version 0.0.5
  */
 
 /**
@@ -49,6 +56,20 @@ const forceValidation = true
 
 // server
 
+/**
+ * @global
+ * @func newErrorString
+ * @description Create a new error string
+ * 
+ * @param {string} ouid The ouid of a user that is requesting the data
+ * @param {any} request The HTTP request object
+ * @param {string} err The error message that was returned
+ * @returns {string} An error message with all needed information
+ */
+function newErrorString(ouid: string, request: any, err: string): string {
+    return `[${new Date().toISOString()}] [ERROR] [${ouid}] [${request.params.id || "#noid"}] [${err}]`
+}
+
 const express = require("express")
 const rateLimit = require("express-rate-limit")
 
@@ -62,7 +83,7 @@ const limiter = rateLimit({
 const api = express()
 api.use(express.json())
 api.use(limiter) // handle rate limiting
-api.listen(8080, () => { console.log("Local server active") })
+api.listen(port, () => { console.log("Local server active") })
 
 api.get("/", (request: any, response: any) => {
     response.status(403).send("Forbidden")
@@ -73,7 +94,7 @@ api.post("/api/v1/auth/login", (request: any, response: any) => {
     // http://localhost:8080/api/v1/auth/login
     const { ouid, password } = request.body
     if (!ouid || !password) {
-        response.status(400).send({ message: "Failed to create user", response: false })
+        response.status(400).send({ message: "Failed to create user", response: false, request: "/auth/login" })
         return
     }
 
@@ -89,7 +110,7 @@ api.post("/api/v1/auth/new", (request: any, response: any) => {
     // http://localhost:8080/api/v1/auth/new
     const { username, password } = request.body
     if (!username || !password) {
-        response.status(400).send({ message: "Failed to create user", response: false })
+        response.status(400).send({ message: "Failed to create user", response: false, request: "/auth/new" })
         return
     }
 
@@ -98,7 +119,8 @@ api.post("/api/v1/auth/new", (request: any, response: any) => {
         .then(() => {
             response.status(200).send({ message: "User created" })
         }).catch(err => {
-            response.status(400).send({ message: "Failed to create user", response: err })
+            console.log(newErrorString("@unknown", request, err))
+            response.status(400).send({ message: "Failed to create user", response: err, request: "/auth/new" })
         })
 })
 
@@ -115,7 +137,12 @@ api.get("/api/v1/bucket/get/:id", (request: any, response: any) => {
         .then((data: any) => {
             response.status(200).send(data)
         }).catch((err: any) => {
-            response.status(401).send({ message: "Unauthorized", response: err })
+            console.log(newErrorString("@unknown", request, err))
+            response.status(401).send({ 
+                message: "Unauthorized", 
+                response: err, 
+                request: `/bucket/get/${request.params.id}` 
+            })
         })
 })
 
@@ -139,10 +166,12 @@ api.post("/api/v1/bucket/upload", (request: any, response: any) => {
             objdb.upload(request.body.data, request.body.encrypted, request.body.shareList).then((id: any) => {
                 response.status(200).send({ id: id })
             }).catch((err) => {
-                response.status(400).send({ message: "Error uploading object", response: err })
+                console.log(newErrorString(ouid, request, err))
+                response.status(400).send({ message: "Error uploading object", response: err, request: "/bucket/upload" })
             })
         }).catch((err: any) => {
-            response.status(401).send({ message: "Unauthorized", response: err })
+            console.log(newErrorString(ouid, request, err))
+            response.status(401).send({ message: "Unauthorized", response: err, request: "/bucket/upload" })
         })
 })
 
@@ -168,9 +197,11 @@ api.delete("/api/v1/bucket/:id/delete", (request: any, response: any) => {
             objdb.delete(id, request.body.requestFrom).then(() => {
                 response.status(200).send({ message: "Object deleted" })
             }).catch((err) => {
-                response.status(400).send({ message: "Error deleting object", response: err })
+                console.log(newErrorString(ouid, request, err))
+                response.status(400).send({ message: "Error deleting object", response: err, request: `/bucket/${id}/delete` })
             })
         }).catch((err: any) => {
-            response.status(401).send({ message: "Unauthorized", response: err })
+            console.log(newErrorString(ouid, request, err))
+            response.status(401).send({ message: "Unauthorized", response: err, request: `/bucket/${id}/delete` })
         })
 })

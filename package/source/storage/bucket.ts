@@ -6,7 +6,7 @@ require('dotenv').config()
  * @file Manage the bucket and storage section of the OXVS-SERVER
  * @name bucket.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.4
+ * @version 0.0.5
  */
 
 /// <reference path="auth.ts" />
@@ -57,6 +57,11 @@ namespace bucket {
         return data
     }
 
+    export interface shareList {
+        type: "o.rawdata" | "o.encrypted",
+        value: string
+    }[]
+
     /**
      * Upload data to server
      * @class ObjectHandler
@@ -68,7 +73,6 @@ namespace bucket {
             // props.sender is basically just who the object belongs to
             // a little weird to be named this.sender later on though, so remember that
             this.sender = props.sender
-            console.log(`Created an ObjectHandler object with no issues. (${this.sender})`)
         }
 
         /**
@@ -89,15 +93,28 @@ namespace bucket {
          *    console.log(id)
          * })
          */
-        public upload(data: any, encrypt: boolean, shareList: string[]) {
+        public upload(data: any, encrypt: boolean, shareList: shareList) {
             // generate id
             const objectId = _crypto.randomUUID()
 
             // add sender value to data
+
+            /*
+             * shareList follows the __data model:
+             * - all important data is stored in __data
+             * - all meta data is stored in $oxvs
+             * - data under __data is given a type of either "o.encrypted" or "o.rawdata"
+             * - encryptObject and decryptObject are will handle encryption and decryption of __data
+             */
+
             data["$oxvs"] = {}
             data["$oxvs"].sender = this.sender
-            data["$oxvs"].shareList = shareList
-            data["$oxvs"].shareList.push("@0")
+            data["$oxvs"].shareList = { __data: shareList }
+            data["$oxvs"].shareList.__data.push({
+                type: "o.rawdata", value: "@0"
+            })
+
+            data["$oxvs"].shareList = encryptObject(data["$oxvs"].shareList)
 
             // write data
             return new Promise((resolve, reject) => {

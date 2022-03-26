@@ -9,7 +9,7 @@ const _crypto = require("crypto")
  * @file Manage the authentication section of the OXVS-SERVER
  * @name auth.ts
  * @author oxvs <admin@oxvs.net>
- * @version 0.0.4
+ * @version 0.0.5
  */
 
 /*
@@ -89,9 +89,9 @@ namespace auth {
                                     if (user.activeSessions.includes(token)) {
                                         resolve(data.__data)
                                     } else {
-                                        reject(false)
+                                        reject("Invalid token")
                                     }
-                                }).catch((err) => reject(err))
+                                }).catch(() => reject("Unknown error (o.bucketowner tried)"))
                         }).catch((err) => reject(err))
                 } else if (requestFor === "o.token") {
                     authdb.getUser(ouid)
@@ -100,9 +100,9 @@ namespace auth {
                             if (user.activeSessions.includes(token)) {
                                 resolve(true)
                             } else {
-                                reject(false)
+                                reject("Invalid token")
                             }
-                        }).catch((err) => reject(err))
+                        }).catch(() => reject("Unknown error (o.token tried)"))
                 }
             })
         }
@@ -125,9 +125,18 @@ namespace auth {
                     } else {
                         if (forceValidation) {
                             // validate request
-                            if (user === owner || data["$oxvs"].shareList.includes(user)) {
+                            if (user === owner) {
                                 resolve(true) // return true
                             } else {
+                                const shareList = bucket.decryptObject(data["$oxvs"].shareList)
+
+                                for (let userList of shareList.__data) {
+                                    if (userList.value === user || owner === user) {
+                                        resolve(true)
+                                        break
+                                    }
+                                }
+
                                 reject(false) // don't return true
                             }
                         } else {
@@ -149,7 +158,6 @@ namespace auth {
 
         constructor(props: any) {
             this.dataName = props.dataName
-            console.log("Created an AuthDatabase object with no issues.")
         }
 
         /**

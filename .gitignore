@@ -3,4 +3,3 @@ package/dist.js
 docs/
 data/
 .env
-httptest.js
