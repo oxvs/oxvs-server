@@ -33,7 +33,10 @@ Objects follow the `__data` model, which is a JSON object that contains the foll
 ```json
 {
     "__data": [
-        { type: "o.encrypted", value: "This text will be encrypted." }
+        { 
+            "type": "o.encrypted", 
+            "value": "This text will be encrypted." 
+        },
     ],
     "$oxvs": [
         "All metadata will be put here.",

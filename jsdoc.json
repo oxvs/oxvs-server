@@ -1,6 +1,9 @@
 {
+    "tags": {
+        "allowUnknownTags": true
+    },
     "source": {
-        "include": ["package/dist.js"],
+        "include": ["package/dist.js", "./README.md"],
         "includePattern": ".js$"
     },
 
